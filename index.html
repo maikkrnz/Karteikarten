@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Karteikarten</title>
+<title>Fachwirt für Einkauf</title>
 <style>
   :root{
     --bg:#f4f5f7;
@@ -54,8 +54,35 @@
   .subtitle{
     color:var(--muted);
     font-size:0.9rem;
-    margin-bottom:20px;
+    margin-bottom:16px;
     text-align:center;
+  }
+
+  .category-row{
+    width:100%;
+    max-width:520px;
+    display:flex;
+    gap:8px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .cat-btn{
+    font-family:inherit;
+    border:1px solid var(--border);
+    background:var(--card-back);
+    color:var(--text-dark);
+    border-radius:999px;
+    padding:8px 16px;
+    font-size:0.85rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .cat-btn.active{
+    background:var(--accent);
+    color:#fff;
+    border-color:var(--accent);
   }
 
   .progress-wrap{
@@ -194,11 +221,6 @@
     opacity:0.4;
     cursor:not-allowed;
   }
-  .btn-flip{
-    background:var(--accent);
-    color:#fff;
-    flex:2;
-  }
 
   .shuffle-row{
     width:100%;
@@ -206,6 +228,7 @@
     display:flex;
     justify-content:center;
     margin-top:14px;
+    gap:8px;
   }
   .btn-shuffle{
     background:transparent;
@@ -233,14 +256,16 @@
 </head>
 <body>
 
-<h1>📚 Karteikarten</h1>
+<h1>📚 Fachwirt für Einkauf</h1>
 <div class="subtitle">Frage antippen, um die Antwort zu sehen</div>
+
+<div class="category-row" id="categoryRow"></div>
 
 <div class="progress-wrap">
   <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
   <div class="progress-label">
-    <span id="progressText">Karte 1 von 33</span>
-    <span id="progressPct">3%</span>
+    <span id="progressText">Karte 1 von 1</span>
+    <span id="progressPct">0%</span>
   </div>
 </div>
 
@@ -260,54 +285,75 @@
 
 <div class="controls">
   <button class="btn-nav" id="prevBtn">← Zurück</button>
-  <button class="btn-flip" id="flipBtn">Umdrehen</button>
   <button class="btn-nav" id="nextBtn">Weiter →</button>
 </div>
 
 <div class="shuffle-row">
   <button class="btn-shuffle" id="shuffleBtn">🔀 Mischen</button>
-  <button class="btn-shuffle" id="resetBtn" style="margin-left:8px;">↺ Von vorne</button>
+  <button class="btn-shuffle" id="resetBtn">↺ Von vorne</button>
 </div>
 
 <div class="done-msg" id="doneMsg"></div>
 
 <script>
-const cards = [
-{q:"Was bedeutet „anwendbares Recht“?", a:"Das anwendbare Recht bestimmt, nach welcher Rechtsordnung ein Vertrag beurteilt wird. Bei internationalen Verträgen muss geklärt werden, welches nationale Recht bzw. welches internationale Kaufrecht gilt.\n\nBeispiel:\nEin deutsches Unternehmen kauft Ware bei einem Unternehmen in Vietnam. Es stellt sich die Frage, welches Recht bei einem Streit gilt.\n\nMerksatz:\n👉 Anwendbares Recht = Nach welchem Recht wird der Vertrag beurteilt?"},
-{q:"Was ist das CISG?", a:"Das CISG (UN-Kaufrecht) ist ein internationales Übereinkommen über den grenzüberschreitenden Warenkauf. Es regelt unter anderem die Pflichten von Käufer und Verkäufer, Vertragswidrigkeiten und die Rechte bei Pflichtverletzungen.\n\nBeispiel:\nEin deutsches Unternehmen kauft Waren bei einem Hersteller in Vietnam. Beide Länder sind CISG-Vertragsstaaten.\n\nMerksatz:\n👉 CISG = internationales Kaufrecht für Waren"},
-{q:"Was regelt Art. 1 CISG?", a:"Art. 1 CISG regelt, wann das CISG auf einen internationalen Warenkauf angewendet wird. Nach Art. 1 Abs. 1 lit. a ist es grundsätzlich anwendbar, wenn die Parteien ihre Niederlassungen in verschiedenen CISG-Vertragsstaaten haben.\n\nBeispiel:\nEin deutsches Unternehmen kauft bei einem vietnamesischen Unternehmen. Beide Staaten sind Vertragsstaaten → Art. 1 CISG prüfen.\n\nMerksatz:\n👉 Art. 1 = Wann gilt das CISG?"},
-{q:"Was regelt Art. 6 CISG?", a:"Art. 6 CISG ermöglicht es den Vertragsparteien, die Anwendung des CISG auszuschließen oder von einzelnen Bestimmungen abzuweichen.\n\nBeispiel:\nIm Vertrag steht: „Es gilt deutsches Recht unter Ausschluss des CISG.“ → Das CISG wird ausgeschlossen.\n\nMerksatz:\n👉 Art. 6 = CISG ausschließen"},
-{q:"Was regelt Art. 35 CISG?", a:"Art. 35 CISG regelt die Vertragsmäßigkeit der Ware. Der Verkäufer muss grundsätzlich Waren liefern, die der vereinbarten Beschaffenheit entsprechen und für den vorgesehenen bzw. gewöhnlichen Zweck geeignet sind.\n\nBeispiel:\nBestellt der Käufer elektrische Geräte mit bestimmten technischen Eigenschaften und erhält Geräte mit anderen Eigenschaften → mögliche Vertragswidrigkeit nach Art. 35 CISG.\n\nMerksatz:\n👉 Art. 35 = Ware muss vertragsgemäß sein"},
-{q:"Was regelt Art. 36 CISG?", a:"Art. 36 CISG regelt die Haftung des Verkäufers für Vertragswidrigkeiten, die bereits bei Gefahrübergang bestanden haben.\n\nBeispiel:\nEin Gerät war bereits bei Gefahrübergang defekt, wird aber erst später beim Käufer als mangelhaft erkannt → Art. 36 CISG kann relevant sein.\n\nMerksatz:\n👉 Art. 36 = Mangel schon bei Gefahrübergang vorhanden"},
-{q:"Was regelt Art. 38 CISG?", a:"Art. 38 CISG regelt die Untersuchungspflicht des Käufers. Der Käufer muss die Ware innerhalb einer so kurzen Frist untersuchen, wie es die Umstände erlauben.\n\nBeispiel:\nEin Großhändler erhält eine Lieferung mit 500 Geräten. Er muss die Ware zeitnah auf erkennbare Mängel untersuchen.\n\nMerksatz:\n👉 Art. 38 = Ware untersuchen"},
-{q:"Was regelt Art. 39 CISG?", a:"Art. 39 CISG regelt die Mängelanzeige des Käufers. Der Käufer muss dem Verkäufer die Vertragswidrigkeit innerhalb einer angemessenen Frist mitteilen. Andernfalls kann er seine Rechte wegen des Mangels verlieren.\n\nBeispiel:\nDer Käufer entdeckt einen Mangel, informiert den Verkäufer aber erst Monate später, obwohl eine frühere Meldung möglich gewesen wäre → problematisch nach Art. 39 CISG.\n\nMerksatz:\n👉 Art. 39 = Mangel rechtzeitig rügen"},
-{q:"Was regeln Art. 45 ff. CISG?", a:"Art. 45 ff. CISG regeln die Rechtsbehelfe des Käufers, wenn der Verkäufer seine vertraglichen Pflichten nicht erfüllt. Je nach Voraussetzungen kommen beispielsweise Nacherfüllung, Preisminderung, Schadensersatz oder Vertragsaufhebung infrage.\n\nBeispiel:\nDer Verkäufer liefert mangelhafte Ware → der Käufer prüft seine Rechte nach Art. 45 ff. CISG.\n\nMerksatz:\n👉 Art. 45 ff. = Rechte des Käufers"},
-{q:"Was regelt Art. 25 CISG?", a:"Art. 25 CISG definiert die wesentliche Vertragsverletzung. Sie liegt vor, wenn dem Vertragspartner im Wesentlichen das entzogen wird, was er nach dem Vertrag erwarten durfte.\n\nBeispiel:\nEine speziell für einen Produktionsprozess bestellte Maschine ist für diesen Zweck völlig ungeeignet → eine wesentliche Vertragsverletzung kann vorliegen.\n\nMerksatz:\n👉 Art. 25 = Wesentliche Vertragsverletzung"},
-{q:"Was regeln Art. 74 ff. CISG?", a:"Art. 74 ff. CISG regeln den Schadensersatz bei Vertragsverletzungen. Unter den Voraussetzungen des CISG können Schäden ersetzt werden, die durch die Vertragsverletzung entstanden sind.\n\nBeispiel:\nDurch eine mangelhafte Lieferung entstehen dem Käufer zusätzliche Kosten → Schadensersatz nach Art. 74 ff. CISG kann geprüft werden.\n\nMerksatz:\n👉 Art. 74 ff. = Schadensersatz"},
-{q:"Was bedeutet „Durchsetzbarkeit von Ansprüchen“?", a:"Die Durchsetzbarkeit beschreibt, ob ein bestehender Anspruch tatsächlich gegenüber dem Vertragspartner durchgesetzt und vollstreckt werden kann.\n\nEin Anspruch kann also bestehen, obwohl seine praktische Durchsetzung im Ausland schwierig ist.\n\nBeispiel:\nEin deutsches Unternehmen hat einen Anspruch gegen einen vietnamesischen Lieferanten. Laut Sachverhalt werden deutsche Urteile in Vietnam nicht anerkannt → die Durchsetzung ist problematisch.\n\nMerksatz:\n👉 Anspruch haben ≠ Anspruch durchsetzen können"},
-{q:"Was ist das New Yorker Übereinkommen?", a:"Das New Yorker Übereinkommen von 1958 erleichtert die Anerkennung und Vollstreckung ausländischer Schiedssprüche.\n\nBesonders wichtig sind Art. II zur Schiedsvereinbarung und Art. III zur Anerkennung und Vollstreckung.\n\nBeispiel:\nEin deutsches Unternehmen und ein vietnamesisches Unternehmen vereinbaren ein Schiedsverfahren. Der Schiedsspruch soll später auch im Ausland vollstreckt werden.\n\nMerksatz:\n👉 New Yorker Übereinkommen = internationale Durchsetzung von Schiedssprüchen"},
-{q:"Was ist eine Schiedsvereinbarung?", a:"Eine Schiedsvereinbarung legt fest, dass Streitigkeiten zwischen den Vertragsparteien durch ein Schiedsgericht und nicht durch ein staatliches Gericht entschieden werden.\n\nBeispiel:\n„Alle Streitigkeiten aus diesem Vertrag werden nach den Regeln der ICC durch ein Schiedsgericht entschieden.“\n\nMerksatz:\n👉 Schiedsvereinbarung = Streit durch Schiedsgericht"},
-{q:"Was bedeutet ICC?", a:"ICC steht für International Chamber of Commerce (Internationale Handelskammer). Sie stellt unter anderem Regeln für internationale Schiedsverfahren bereit und ist Herausgeberin der Incoterms®.\n\nBeispiel:\nZwei internationale Unternehmen vereinbaren, dass Streitigkeiten nach den ICC-Schiedsregeln entschieden werden.\n\nMerksatz:\n👉 ICC = Internationale Handelskammer"},
-{q:"Was regelt die Rom-I-Verordnung?", a:"Die Rom-I-Verordnung (EG) Nr. 593/2008 regelt, welches nationale Recht auf einen internationalen Vertrag angewendet wird.\n\nBeispiel:\nEin deutsches Unternehmen schließt einen Vertrag mit einem Unternehmen aus Vietnam. Es wurde keine Rechtswahl getroffen → die Rom-I-Verordnung kann bei der Bestimmung des anwendbaren Rechts relevant sein.\n\nMerksatz:\n👉 Rom-I = Welches nationale Recht gilt?"},
-{q:"Was regelt Art. 3 Rom-I?", a:"Art. 3 Rom-I regelt die Rechtswahl. Die Vertragsparteien können grundsätzlich selbst bestimmen, welches Recht auf ihren Vertrag angewendet werden soll.\n\nBeispiel:\n„Es gilt deutsches Recht unter Ausschluss des CISG.“\n\nMerksatz:\n👉 Art. 3 Rom-I = Rechtswahl"},
-{q:"Was regelt Art. 4 Rom-I?", a:"Art. 4 Rom-I enthält die Regeln für das anwendbare Recht, wenn keine Rechtswahl getroffen wurde. Beim Warenkauf ist grundsätzlich das Recht am gewöhnlichen Aufenthalt des Verkäufers relevant.\n\nBeispiel:\nEin deutsches Unternehmen kauft bei einem vietnamesischen Verkäufer und im Vertrag steht nichts zum anwendbaren Recht → Art. 4 Rom-I ist zu prüfen.\n\nMerksatz:\n👉 Art. 4 = Keine Rechtswahl → welches Recht gilt?"},
-{q:"Welche Rechtsgrundlagen sind bei einem Kaufvertrag mit einem deutschen Lieferanten wichtig?", a:"Bei einem deutschen Kaufvertrag sind insbesondere die Vorschriften des BGB-Kaufrechts relevant. Besonders wichtig sind §§ 433, 434 und 437 BGB.\n\nBeispiel:\nEin deutscher Lieferant liefert mangelhafte Ware → BGB-Kaufrecht prüfen.\n\nMerksatz:\n👉 Deutscher Kaufvertrag = BGB-Kaufrecht"},
-{q:"Was regelt § 433 BGB?", a:"§ 433 BGB regelt die wesentlichen Pflichten aus dem Kaufvertrag. Der Verkäufer muss dem Käufer die Sache übergeben und sie grundsätzlich frei von Sach- und Rechtsmängeln verschaffen.\n\nBeispiel:\nEin Lieferant verkauft elektrische Geräte. Er muss diese grundsätzlich mangelfrei liefern.\n\nMerksatz:\n👉 § 433 = Pflichten aus dem Kaufvertrag"},
-{q:"Was regelt § 434 BGB?", a:"§ 434 BGB bestimmt, wann eine Kaufsache einen Sachmangel hat. Dabei spielen unter anderem die vereinbarte Beschaffenheit, die vereinbarte Verwendung und die objektiv erforderliche Beschaffenheit eine Rolle.\n\nBeispiel:\nElektrische Geräte werden mit einer nicht ordnungsgemäßen CE-Kennzeichnung geliefert → ein Sachmangel ist zu prüfen.\n\nMerksatz:\n👉 § 434 = Wann liegt ein Sachmangel vor?"},
-{q:"Welche Bedeutung hat die CE-Kennzeichnung bei der Aufgabe?", a:"Die CE-Kennzeichnung zeigt die Konformität eines Produkts mit den einschlägigen EU-Anforderungen an. Eine nicht ordnungsgemäße CE-Kennzeichnung kann deshalb dazu führen, dass die Ware nicht den erforderlichen bzw. vereinbarten Anforderungen entspricht.\n\nBeispiel:\nEin Lieferant liefert elektrische Geräte nach Deutschland, deren CE-Kennzeichnung nicht ordnungsgemäß ist → ein Sachmangel ist zu prüfen.\n\nMerksatz:\n👉 CE = Konformität mit den relevanten EU-Anforderungen"},
-{q:"Was regelt § 437 BGB?", a:"§ 437 BGB regelt die Rechte des Käufers bei einem Sachmangel. Dazu gehören insbesondere Nacherfüllung, Rücktritt, Minderung und Schadensersatz – jeweils unter den gesetzlichen Voraussetzungen.\n\nBeispiel:\nEin Lieferant liefert mangelhafte Ware → der Käufer prüft seine Rechte nach § 437 BGB.\n\nMerksatz:\n👉 § 437 = Rechte des Käufers"},
-{q:"Was regelt § 439 BGB?", a:"§ 439 BGB regelt die Nacherfüllung. Der Käufer kann grundsätzlich die Beseitigung des Mangels oder die Lieferung einer mangelfreien Sache verlangen.\n\nBeispiel:\nEine gelieferte Maschine ist defekt → der Käufer verlangt Reparatur oder eine mangelfreie Ersatzmaschine.\n\nMerksatz:\n👉 § 439 = Nacherfüllung"},
-{q:"Welche Bedeutung haben §§ 440, 323 BGB beim Rücktritt?", a:"Diese Vorschriften sind für den Rücktritt wegen einer Pflichtverletzung bzw. eines Mangels relevant. Grundsätzlich muss dem Verkäufer zunächst eine angemessene Möglichkeit zur Nacherfüllung gegeben werden. Unter bestimmten Voraussetzungen ist eine Fristsetzung entbehrlich.\n\nBeispiel:\nEin Lieferant kann einen erheblichen Mangel trotz angemessener Frist nicht beseitigen → ein Rücktritt kann geprüft werden.\n\nMerksatz:\n👉 §§ 440, 323 = Rücktritt prüfen"},
-{q:"Was regelt § 441 BGB?", a:"§ 441 BGB regelt die Minderung des Kaufpreises bei einem Mangel. Der Käufer behält die Ware und kann unter den gesetzlichen Voraussetzungen den Kaufpreis herabsetzen.\n\nBeispiel:\nEin Gerät hat einen Mangel, kann aber weiterhin verwendet werden → der Käufer behält es und verlangt eine Kaufpreisminderung.\n\nMerksatz:\n👉 § 441 = Ware behalten, weniger zahlen"},
-{q:"Was regelt § 280 BGB?", a:"§ 280 BGB ist eine zentrale Vorschrift für Schadensersatz wegen Pflichtverletzung. Wird eine Pflicht verletzt und entsteht dadurch ein Schaden, kann unter den gesetzlichen Voraussetzungen Schadensersatz verlangt werden.\n\nBeispiel:\nEin Lieferant liefert mangelhafte Ware und verursacht dadurch zusätzliche Kosten beim Käufer → Schadensersatz nach § 280 BGB kann geprüft werden.\n\nMerksatz:\n👉 § 280 = Pflichtverletzung + Schaden"},
-{q:"Was regelt § 281 BGB?", a:"§ 281 BGB regelt Schadensersatz statt der Leistung. Grundsätzlich muss dem Schuldner vorher eine angemessene Frist zur Leistung oder Nacherfüllung gesetzt werden.\n\nBeispiel:\nDer Lieferant beseitigt einen Mangel trotz angemessener Frist nicht → Schadensersatz statt der Leistung kann geprüft werden.\n\nMerksatz:\n👉 § 281 = Schadensersatz statt der Leistung"},
-{q:"Welche Schadenspositionen können bei einer mangelhaften Lieferung entstehen?", a:"Durch eine Pflichtverletzung können verschiedene Folgekosten entstehen. In der Aufgabe werden insbesondere Kundenreklamationen, Schadensdokumentation und Lagerung genannt.\n\nDiese können grundsätzlich als Schaden relevant sein, wenn sie durch die Pflichtverletzung verursacht wurden und die weiteren Voraussetzungen des Schadensersatzrechts erfüllt sind.\n\nBeispiel:\nWegen mangelhafter Ware muss das Unternehmen zusätzliche Reklamationen bearbeiten und die Ware länger lagern.\n\nMerksatz:\n👉 Mangel → Folgekosten → Schadensersatz prüfen"},
-{q:"Was regelt § 377 HGB?", a:"§ 377 HGB regelt die Untersuchungs- und Rügepflicht beim beiderseitigen Handelskauf.\n\nDer Käufer muss die Ware unverzüglich untersuchen und erkennbare Mängel unverzüglich anzeigen. Verdeckte Mängel müssen nach ihrer Entdeckung unverzüglich gerügt werden.\n\nBeispiel:\nEin Großhändler erhält eine Lieferung und entdeckt bei der Wareneingangskontrolle beschädigte Ware → der Mangel muss grundsätzlich unverzüglich gerügt werden.\n\nMerksatz:\n👉 § 377 = Untersuchen & rügen"},
-{q:"Wie kann man internationale Verträge rechtssicherer gestalten?", a:"Wichtige Regelungen sind insbesondere:\n• Rechtswahl\n• Regelung zum CISG\n• Schiedsvereinbarung\n• genaue Qualitäts- und Produktspezifikationen\n• erforderliche Dokumente und Zertifikate\n• Regelungen zu Prüfung und Mängelrüge\n• eindeutige Incoterms\n\nBeispiel:\nEin deutscher Händler vereinbart mit einem ausländischen Lieferanten deutsches Recht, schließt das CISG aus und vereinbart ein ICC-Schiedsverfahren.\n\nMerksatz:\n👉 Internationaler Vertrag = Recht + Streitlösung + Qualität + Lieferung klar regeln"},
-{q:"Was regeln die Incoterms?", a:"Die Incoterms® regeln bei internationalen Warenlieferungen insbesondere die Verteilung von Lieferpflichten, Kosten und Risiken zwischen Käufer und Verkäufer. Je nach Klausel werden auch Transport, Versicherung und Zollpflichten geregelt.\n\nBeispiel:\nBei einer internationalen Lieferung wird DAP vereinbart. Dadurch wird festgelegt, welche Liefer- und Transportpflichten der Verkäufer übernimmt und wann das Risiko übergeht.\n\nMerksatz:\n👉 Incoterms = Wer liefert? Wer zahlt? Wer trägt das Risiko?"},
-{q:"Wie prüfe ich eine IHK-Aufgabe zum anwendbaren Recht systematisch?", a:"Bei einem internationalen Lieferanten:\n1. CISG prüfen → Art. 1\n2. Ausschluss prüfen → Art. 6\n3. Vertragswidrigkeit prüfen → Art. 35/36\n4. Untersuchung prüfen → Art. 38\n5. Mängelrüge prüfen → Art. 39\n6. Rechte prüfen → Art. 45 ff.\n7. Schadensersatz prüfen → Art. 74 ff.\n8. Durchsetzbarkeit prüfen → Gericht/Schiedsgericht\n\nBei einem deutschen Lieferanten:\n1. Sachmangel → § 434 BGB\n2. Käuferrechte → § 437 BGB\n3. Nacherfüllung → § 439 BGB\n4. Rücktritt/Minderung → §§ 440, 323, 441 BGB\n5. Schadensersatz → §§ 280 ff. BGB\n6. Untersuchung/Rüge → § 377 HGB\n\nBeispiel:\nVietnam-Lieferant liefert mangelhafte Ware → zuerst CISG prüfen.\nDeutscher Lieferant liefert mangelhafte Ware → BGB und ggf. HGB prüfen."}
-];
+const data = {
+  "Recht": [
+    {q:"Was bedeutet „anwendbares Recht“?", a:"Das anwendbare Recht bestimmt, nach welcher Rechtsordnung ein Vertrag beurteilt wird. Bei internationalen Verträgen muss geklärt werden, welches nationale Recht bzw. welches internationale Kaufrecht gilt.\n\nBeispiel:\nEin deutsches Unternehmen kauft Ware bei einem Unternehmen in Vietnam. Es stellt sich die Frage, welches Recht bei einem Streit gilt.\n\nMerksatz:\n👉 Anwendbares Recht = Nach welchem Recht wird der Vertrag beurteilt?"},
+    {q:"Was ist das CISG?", a:"Das CISG (UN-Kaufrecht) ist ein internationales Übereinkommen über den grenzüberschreitenden Warenkauf. Es regelt unter anderem die Pflichten von Käufer und Verkäufer, Vertragswidrigkeiten und die Rechte bei Pflichtverletzungen.\n\nBeispiel:\nEin deutsches Unternehmen kauft Waren bei einem Hersteller in Vietnam. Beide Länder sind CISG-Vertragsstaaten.\n\nMerksatz:\n👉 CISG = internationales Kaufrecht für Waren"},
+    {q:"Was regelt Art. 1 CISG?", a:"Art. 1 CISG regelt, wann das CISG auf einen internationalen Warenkauf angewendet wird. Nach Art. 1 Abs. 1 lit. a ist es grundsätzlich anwendbar, wenn die Parteien ihre Niederlassungen in verschiedenen CISG-Vertragsstaaten haben.\n\nBeispiel:\nEin deutsches Unternehmen kauft bei einem vietnamesischen Unternehmen. Beide Staaten sind Vertragsstaaten → Art. 1 CISG prüfen.\n\nMerksatz:\n👉 Art. 1 = Wann gilt das CISG?"},
+    {q:"Was regelt Art. 6 CISG?", a:"Art. 6 CISG ermöglicht es den Vertragsparteien, die Anwendung des CISG auszuschließen oder von einzelnen Bestimmungen abzuweichen.\n\nBeispiel:\nIm Vertrag steht: „Es gilt deutsches Recht unter Ausschluss des CISG.“ → Das CISG wird ausgeschlossen.\n\nMerksatz:\n👉 Art. 6 = CISG ausschließen"},
+    {q:"Was regelt Art. 35 CISG?", a:"Art. 35 CISG regelt die Vertragsmäßigkeit der Ware. Der Verkäufer muss grundsätzlich Waren liefern, die der vereinbarten Beschaffenheit entsprechen und für den vorgesehenen bzw. gewöhnlichen Zweck geeignet sind.\n\nBeispiel:\nBestellt der Käufer elektrische Geräte mit bestimmten technischen Eigenschaften und erhält Geräte mit anderen Eigenschaften → mögliche Vertragswidrigkeit nach Art. 35 CISG.\n\nMerksatz:\n👉 Art. 35 = Ware muss vertragsgemäß sein"},
+    {q:"Was regelt Art. 36 CISG?", a:"Art. 36 CISG regelt die Haftung des Verkäufers für Vertragswidrigkeiten, die bereits bei Gefahrübergang bestanden haben.\n\nBeispiel:\nEin Gerät war bereits bei Gefahrübergang defekt, wird aber erst später beim Käufer als mangelhaft erkannt → Art. 36 CISG kann relevant sein.\n\nMerksatz:\n👉 Art. 36 = Mangel schon bei Gefahrübergang vorhanden"},
+    {q:"Was regelt Art. 38 CISG?", a:"Art. 38 CISG regelt die Untersuchungspflicht des Käufers. Der Käufer muss die Ware innerhalb einer so kurzen Frist untersuchen, wie es die Umstände erlauben.\n\nBeispiel:\nEin Großhändler erhält eine Lieferung mit 500 Geräten. Er muss die Ware zeitnah auf erkennbare Mängel untersuchen.\n\nMerksatz:\n👉 Art. 38 = Ware untersuchen"},
+    {q:"Was regelt Art. 39 CISG?", a:"Art. 39 CISG regelt die Mängelanzeige des Käufers. Der Käufer muss dem Verkäufer die Vertragswidrigkeit innerhalb einer angemessenen Frist mitteilen. Andernfalls kann er seine Rechte wegen des Mangels verlieren.\n\nBeispiel:\nDer Käufer entdeckt einen Mangel, informiert den Verkäufer aber erst Monate später, obwohl eine frühere Meldung möglich gewesen wäre → problematisch nach Art. 39 CISG.\n\nMerksatz:\n👉 Art. 39 = Mangel rechtzeitig rügen"},
+    {q:"Was regeln Art. 45 ff. CISG?", a:"Art. 45 ff. CISG regeln die Rechtsbehelfe des Käufers, wenn der Verkäufer seine vertraglichen Pflichten nicht erfüllt. Je nach Voraussetzungen kommen beispielsweise Nacherfüllung, Preisminderung, Schadensersatz oder Vertragsaufhebung infrage.\n\nBeispiel:\nDer Verkäufer liefert mangelhafte Ware → der Käufer prüft seine Rechte nach Art. 45 ff. CISG.\n\nMerksatz:\n👉 Art. 45 ff. = Rechte des Käufers"},
+    {q:"Was regelt Art. 25 CISG?", a:"Art. 25 CISG definiert die wesentliche Vertragsverletzung. Sie liegt vor, wenn dem Vertragspartner im Wesentlichen das entzogen wird, was er nach dem Vertrag erwarten durfte.\n\nBeispiel:\nEine speziell für einen Produktionsprozess bestellte Maschine ist für diesen Zweck völlig ungeeignet → eine wesentliche Vertragsverletzung kann vorliegen.\n\nMerksatz:\n👉 Art. 25 = Wesentliche Vertragsverletzung"},
+    {q:"Was regeln Art. 74 ff. CISG?", a:"Art. 74 ff. CISG regeln den Schadensersatz bei Vertragsverletzungen. Unter den Voraussetzungen des CISG können Schäden ersetzt werden, die durch die Vertragsverletzung entstanden sind.\n\nBeispiel:\nDurch eine mangelhafte Lieferung entstehen dem Käufer zusätzliche Kosten → Schadensersatz nach Art. 74 ff. CISG kann geprüft werden.\n\nMerksatz:\n👉 Art. 74 ff. = Schadensersatz"},
+    {q:"Was bedeutet „Durchsetzbarkeit von Ansprüchen“?", a:"Die Durchsetzbarkeit beschreibt, ob ein bestehender Anspruch tatsächlich gegenüber dem Vertragspartner durchgesetzt und vollstreckt werden kann.\n\nEin Anspruch kann also bestehen, obwohl seine praktische Durchsetzung im Ausland schwierig ist.\n\nBeispiel:\nEin deutsches Unternehmen hat einen Anspruch gegen einen vietnamesischen Lieferanten. Laut Sachverhalt werden deutsche Urteile in Vietnam nicht anerkannt → die Durchsetzung ist problematisch.\n\nMerksatz:\n👉 Anspruch haben ≠ Anspruch durchsetzen können"},
+    {q:"Was ist das New Yorker Übereinkommen?", a:"Das New Yorker Übereinkommen von 1958 erleichtert die Anerkennung und Vollstreckung ausländischer Schiedssprüche.\n\nBesonders wichtig sind Art. II zur Schiedsvereinbarung und Art. III zur Anerkennung und Vollstreckung.\n\nBeispiel:\nEin deutsches Unternehmen und ein vietnamesisches Unternehmen vereinbaren ein Schiedsverfahren. Der Schiedsspruch soll später auch im Ausland vollstreckt werden.\n\nMerksatz:\n👉 New Yorker Übereinkommen = internationale Durchsetzung von Schiedssprüchen"},
+    {q:"Was ist eine Schiedsvereinbarung?", a:"Eine Schiedsvereinbarung legt fest, dass Streitigkeiten zwischen den Vertragsparteien durch ein Schiedsgericht und nicht durch ein staatliches Gericht entschieden werden.\n\nBeispiel:\n„Alle Streitigkeiten aus diesem Vertrag werden nach den Regeln der ICC durch ein Schiedsgericht entschieden.“\n\nMerksatz:\n👉 Schiedsvereinbarung = Streit durch Schiedsgericht"},
+    {q:"Was bedeutet ICC?", a:"ICC steht für International Chamber of Commerce (Internationale Handelskammer). Sie stellt unter anderem Regeln für internationale Schiedsverfahren bereit und ist Herausgeberin der Incoterms®.\n\nBeispiel:\nZwei internationale Unternehmen vereinbaren, dass Streitigkeiten nach den ICC-Schiedsregeln entschieden werden.\n\nMerksatz:\n👉 ICC = Internationale Handelskammer"},
+    {q:"Was regelt die Rom-I-Verordnung?", a:"Die Rom-I-Verordnung (EG) Nr. 593/2008 regelt, welches nationale Recht auf einen internationalen Vertrag angewendet wird.\n\nBeispiel:\nEin deutsches Unternehmen schließt einen Vertrag mit einem Unternehmen aus Vietnam. Es wurde keine Rechtswahl getroffen → die Rom-I-Verordnung kann bei der Bestimmung des anwendbaren Rechts relevant sein.\n\nMerksatz:\n👉 Rom-I = Welches nationale Recht gilt?"},
+    {q:"Was regelt Art. 3 Rom-I?", a:"Art. 3 Rom-I regelt die Rechtswahl. Die Vertragsparteien können grundsätzlich selbst bestimmen, welches Recht auf ihren Vertrag angewendet werden soll.\n\nBeispiel:\n„Es gilt deutsches Recht unter Ausschluss des CISG.“\n\nMerksatz:\n👉 Art. 3 Rom-I = Rechtswahl"},
+    {q:"Was regelt Art. 4 Rom-I?", a:"Art. 4 Rom-I enthält die Regeln für das anwendbare Recht, wenn keine Rechtswahl getroffen wurde. Beim Warenkauf ist grundsätzlich das Recht am gewöhnlichen Aufenthalt des Verkäufers relevant.\n\nBeispiel:\nEin deutsches Unternehmen kauft bei einem vietnamesischen Verkäufer und im Vertrag steht nichts zum anwendbaren Recht → Art. 4 Rom-I ist zu prüfen.\n\nMerksatz:\n👉 Art. 4 = Keine Rechtswahl → welches Recht gilt?"},
+    {q:"Welche Rechtsgrundlagen sind bei einem Kaufvertrag mit einem deutschen Lieferanten wichtig?", a:"Bei einem deutschen Kaufvertrag sind insbesondere die Vorschriften des BGB-Kaufrechts relevant. Besonders wichtig sind §§ 433, 434 und 437 BGB.\n\nBeispiel:\nEin deutscher Lieferant liefert mangelhafte Ware → BGB-Kaufrecht prüfen.\n\nMerksatz:\n👉 Deutscher Kaufvertrag = BGB-Kaufrecht"},
+    {q:"Was regelt § 433 BGB?", a:"§ 433 BGB regelt die wesentlichen Pflichten aus dem Kaufvertrag. Der Verkäufer muss dem Käufer die Sache übergeben und sie grundsätzlich frei von Sach- und Rechtsmängeln verschaffen.\n\nBeispiel:\nEin Lieferant verkauft elektrische Geräte. Er muss diese grundsätzlich mangelfrei liefern.\n\nMerksatz:\n👉 § 433 = Pflichten aus dem Kaufvertrag"},
+    {q:"Was regelt § 434 BGB?", a:"§ 434 BGB bestimmt, wann eine Kaufsache einen Sachmangel hat. Dabei spielen unter anderem die vereinbarte Beschaffenheit, die vereinbarte Verwendung und die objektiv erforderliche Beschaffenheit eine Rolle.\n\nBeispiel:\nElektrische Geräte werden mit einer nicht ordnungsgemäßen CE-Kennzeichnung geliefert → ein Sachmangel ist zu prüfen.\n\nMerksatz:\n👉 § 434 = Wann liegt ein Sachmangel vor?"},
+    {q:"Welche Bedeutung hat die CE-Kennzeichnung bei der Aufgabe?", a:"Die CE-Kennzeichnung zeigt die Konformität eines Produkts mit den einschlägigen EU-Anforderungen an. Eine nicht ordnungsgemäße CE-Kennzeichnung kann deshalb dazu führen, dass die Ware nicht den erforderlichen bzw. vereinbarten Anforderungen entspricht.\n\nBeispiel:\nEin Lieferant liefert elektrische Geräte nach Deutschland, deren CE-Kennzeichnung nicht ordnungsgemäß ist → ein Sachmangel ist zu prüfen.\n\nMerksatz:\n👉 CE = Konformität mit den relevanten EU-Anforderungen"},
+    {q:"Was regelt § 437 BGB?", a:"§ 437 BGB regelt die Rechte des Käufers bei einem Sachmangel. Dazu gehören insbesondere Nacherfüllung, Rücktritt, Minderung und Schadensersatz – jeweils unter den gesetzlichen Voraussetzungen.\n\nBeispiel:\nEin Lieferant liefert mangelhafte Ware → der Käufer prüft seine Rechte nach § 437 BGB.\n\nMerksatz:\n👉 § 437 = Rechte des Käufers"},
+    {q:"Was regelt § 439 BGB?", a:"§ 439 BGB regelt die Nacherfüllung. Der Käufer kann grundsätzlich die Beseitigung des Mangels oder die Lieferung einer mangelfreien Sache verlangen.\n\nBeispiel:\nEine gelieferte Maschine ist defekt → der Käufer verlangt Reparatur oder eine mangelfreie Ersatzmaschine.\n\nMerksatz:\n👉 § 439 = Nacherfüllung"},
+    {q:"Welche Bedeutung haben §§ 440, 323 BGB beim Rücktritt?", a:"Diese Vorschriften sind für den Rücktritt wegen einer Pflichtverletzung bzw. eines Mangels relevant. Grundsätzlich muss dem Verkäufer zunächst eine angemessene Möglichkeit zur Nacherfüllung gegeben werden. Unter bestimmten Voraussetzungen ist eine Fristsetzung entbehrlich.\n\nBeispiel:\nEin Lieferant kann einen erheblichen Mangel trotz angemessener Frist nicht beseitigen → ein Rücktritt kann geprüft werden.\n\nMerksatz:\n👉 §§ 440, 323 = Rücktritt prüfen"},
+    {q:"Was regelt § 441 BGB?", a:"§ 441 BGB regelt die Minderung des Kaufpreises bei einem Mangel. Der Käufer behält die Ware und kann unter den gesetzlichen Voraussetzungen den Kaufpreis herabsetzen.\n\nBeispiel:\nEin Gerät hat einen Mangel, kann aber weiterhin verwendet werden → der Käufer behält es und verlangt eine Kaufpreisminderung.\n\nMerksatz:\n👉 § 441 = Ware behalten, weniger zahlen"},
+    {q:"Was regelt § 280 BGB?", a:"§ 280 BGB ist eine zentrale Vorschrift für Schadensersatz wegen Pflichtverletzung. Wird eine Pflicht verletzt und entsteht dadurch ein Schaden, kann unter den gesetzlichen Voraussetzungen Schadensersatz verlangt werden.\n\nBeispiel:\nEin Lieferant liefert mangelhafte Ware und verursacht dadurch zusätzliche Kosten beim Käufer → Schadensersatz nach § 280 BGB kann geprüft werden.\n\nMerksatz:\n👉 § 280 = Pflichtverletzung + Schaden"},
+    {q:"Was regelt § 281 BGB?", a:"§ 281 BGB regelt Schadensersatz statt der Leistung. Grundsätzlich muss dem Schuldner vorher eine angemessene Frist zur Leistung oder Nacherfüllung gesetzt werden.\n\nBeispiel:\nDer Lieferant beseitigt einen Mangel trotz angemessener Frist nicht → Schadensersatz statt der Leistung kann geprüft werden.\n\nMerksatz:\n👉 § 281 = Schadensersatz statt der Leistung"},
+    {q:"Welche Schadenspositionen können bei einer mangelhaften Lieferung entstehen?", a:"Durch eine Pflichtverletzung können verschiedene Folgekosten entstehen. In der Aufgabe werden insbesondere Kundenreklamationen, Schadensdokumentation und Lagerung genannt.\n\nDiese können grundsätzlich als Schaden relevant sein, wenn sie durch die Pflichtverletzung verursacht wurden und die weiteren Voraussetzungen des Schadensersatzrechts erfüllt sind.\n\nBeispiel:\nWegen mangelhafter Ware muss das Unternehmen zusätzliche Reklamationen bearbeiten und die Ware länger lagern.\n\nMerksatz:\n👉 Mangel → Folgekosten → Schadensersatz prüfen"},
+    {q:"Was regelt § 377 HGB?", a:"§ 377 HGB regelt die Untersuchungs- und Rügepflicht beim beiderseitigen Handelskauf.\n\nDer Käufer muss die Ware unverzüglich untersuchen und erkennbare Mängel unverzüglich anzeigen. Verdeckte Mängel müssen nach ihrer Entdeckung unverzüglich gerügt werden.\n\nBeispiel:\nEin Großhändler erhält eine Lieferung und entdeckt bei der Wareneingangskontrolle beschädigte Ware → der Mangel muss grundsätzlich unverzüglich gerügt werden.\n\nMerksatz:\n👉 § 377 = Untersuchen & rügen"},
+    {q:"Wie kann man internationale Verträge rechtssicherer gestalten?", a:"Wichtige Regelungen sind insbesondere:\n• Rechtswahl\n• Regelung zum CISG\n• Schiedsvereinbarung\n• genaue Qualitäts- und Produktspezifikationen\n• erforderliche Dokumente und Zertifikate\n• Regelungen zu Prüfung und Mängelrüge\n• eindeutige Incoterms\n\nBeispiel:\nEin deutscher Händler vereinbart mit einem ausländischen Lieferanten deutsches Recht, schließt das CISG aus und vereinbart ein ICC-Schiedsverfahren.\n\nMerksatz:\n👉 Internationaler Vertrag = Recht + Streitlösung + Qualität + Lieferung klar regeln"},
+    {q:"Was regeln die Incoterms?", a:"Die Incoterms® regeln bei internationalen Warenlieferungen insbesondere die Verteilung von Lieferpflichten, Kosten und Risiken zwischen Käufer und Verkäufer. Je nach Klausel werden auch Transport, Versicherung und Zollpflichten geregelt.\n\nBeispiel:\nBei einer internationalen Lieferung wird DAP vereinbart. Dadurch wird festgelegt, welche Liefer- und Transportpflichten der Verkäufer übernimmt und wann das Risiko übergeht.\n\nMerksatz:\n👉 Incoterms = Wer liefert? Wer zahlt? Wer trägt das Risiko?"},
+    {q:"Wie prüfe ich eine IHK-Aufgabe zum anwendbaren Recht systematisch?", a:"Bei einem internationalen Lieferanten:\n1. CISG prüfen → Art. 1\n2. Ausschluss prüfen → Art. 6\n3. Vertragswidrigkeit prüfen → Art. 35/36\n4. Untersuchung prüfen → Art. 38\n5. Mängelrüge prüfen → Art. 39\n6. Rechte prüfen → Art. 45 ff.\n7. Schadensersatz prüfen → Art. 74 ff.\n8. Durchsetzbarkeit prüfen → Gericht/Schiedsgericht\n\nBei einem deutschen Lieferanten:\n1. Sachmangel → § 434 BGB\n2. Käuferrechte → § 437 BGB\n3. Nacherfüllung → § 439 BGB\n4. Rücktritt/Minderung → §§ 440, 323, 441 BGB\n5. Schadensersatz → §§ 280 ff. BGB\n6. Untersuchung/Rüge → § 377 HGB\n\nBeispiel:\nVietnam-Lieferant liefert mangelhafte Ware → zuerst CISG prüfen.\nDeutscher Lieferant liefert mangelhafte Ware → BGB und ggf. HGB prüfen."}
+  ],
+  "Maverick Buying": [
+    {q:"Was versteht man unter Maverick Buying?", a:"Maverick Buying bezeichnet die Beschaffung von Waren oder Dienstleistungen am Einkauf vorbei. Dabei werden die festgelegten Einkaufsprozesse, Lieferanten oder Rahmenverträge des Unternehmens nicht eingehalten.\n\nBeispiel:\nDie Produktion benötigt dringend einen bestimmten Dienstleister und beauftragt diesen direkt, obwohl grundsätzlich der Einkauf für die Beauftragung zuständig ist.\n\nMerksatz:\n👉 Maverick Buying = Einkauf wird umgangen."},
+    {q:"Wie berechnet man die Maverick-Buying-Quote?", a:"Maverick-Buying-Quote =\n\nNicht vom Einkauf beschafftes Beschaffungsvolumen\n÷ gesamtes Beschaffungsvolumen\n× 100\n\nBeispiel:\nGesamtes Beschaffungsvolumen: 10 Mio. €\nDavon am Einkauf vorbei: 1 Mio. €\n\n1 Mio. € ÷ 10 Mio. € × 100 = 10 %\n\nMerksatz:\n👉 Am Einkauf vorbei ÷ Gesamtvolumen × 100 = Maverick-Buying-Quote."},
+    {q:"Welche Folgen kann Maverick Buying für ein Unternehmen haben?", a:"Mögliche Folgen sind:\n\n• fehlende Preisvergleiche\n• höhere Einkaufspreise\n• schlecht geführte oder fehlende Verhandlungen\n• nicht genutzte Vorteile aus Rahmenverträgen\n• zusätzliche Kosten\n• unabgestimmte Prozesse\n• teure „Schnellschüsse“\n• mangelnde Transparenz über die Gesamtausgaben\n• höhere rechtliche Risiken\n• zusätzlicher Aufwand an internen Schnittstellen\n• schlechtere Außenwirkung gegenüber Lieferanten\n\nBeispiel:\nEine Abteilung bestellt selbst bei einem Lieferanten, obwohl das Unternehmen mit einem anderen Lieferanten einen günstigeren Rahmenvertrag besitzt.\n\nMerksatz:\n👉 Maverick Buying kostet Geld, schafft Aufwand und senkt die Kontrolle."},
+    {q:"Welche Gründe führen häufig zu Maverick Buying?", a:"Typische Gründe sind:\n\n• Mitarbeiter kennen die Einkaufsprozesse nicht.\n• Rahmenverträge sind nicht bekannt.\n• fehlendes Wissen über die Gesamtkosten (TCO)\n• Abteilungsegoismus\n• Wunsch nach mehr Geschwindigkeit und Flexibilität\n• mangelndes Vertrauen in den Einkauf\n• fehlende Verfügbarkeit eines gewünschten Produkts/Dienstleisters\n• dringender Bedarf\n• mangelndes betriebswirtschaftliches oder Prozessverständnis\n• schlechte bzw. unpassende Lieferantenbasis\n• Zielkonflikte zwischen Einkauf und Fachabteilungen\n\nBeispiel:\nEine Fachabteilung bestellt selbst, weil sie der Meinung ist, dass der Einkauf „zu lange braucht“.\n\nMerksatz:\n👉 Unwissenheit, Zeitdruck, Egoismus und fehlendes Vertrauen fördern Maverick Buying."},
+    {q:"Welche internen Kunden können Maverick Buying betreiben?", a:"Grundsätzlich können verschiedene interne Abteilungen bzw. Mitarbeiter am Einkauf vorbei beschaffen, z. B.:\n\n• Geschäftsführung\n• Produktion\n• Technik / Engineering\n• Labor\n• anwendungstechnische Bereiche\n• andere Fachabteilungen\n\nBeispiel:\nDie Technik benötigt eine spezielle Maschine und bestellt diese direkt beim Hersteller, ohne den Einkauf einzubeziehen.\n\nMerksatz:\n👉 Maverick Buying kann überall entstehen, wo Fachabteilungen selbst beschaffen."},
+    {q:"Welche typischen Aussagen bzw. Slogans können Maverick Buying fördern?", a:"Typische Aussagen sind beispielsweise:\n\n• „Einkaufen kann jeder!“\n• „Das geht schneller, wenn ich es selbst mache.“\n• „Der Einkauf braucht zu lange.“\n• „Ich weiß selbst, was ich brauche.“\n\nBeispiel:\nEin Mitarbeiter bestellt einen Artikel direkt beim Lieferanten, weil er glaubt, dass eine Bestellung über den Einkauf unnötig Zeit kostet.\n\nMerksatz:\n👉 „Einkaufen kann jeder!“ = typisches Warnsignal für Maverick Buying."},
+    {q:"Welche Maßnahmen können zur Verringerung von Maverick Buying eingesetzt werden?", a:"Mögliche Maßnahmen:\n\n1. Nur der Einkauf darf Bestellungen auslösen.\n2. Rechnungen werden nur bei ordnungsgemäßer Bestellung akzeptiert.\n3. Einkaufsrichtlinie bzw. Einkaufshandbuch einführen.\n4. Einkaufsprozesse klar definieren.\n5. Einkauf frühzeitig in Projekte und Entwicklungen einbinden.\n6. Einkauf bei Investitionsgütern einbinden.\n7. Rahmenverträge abschließen.\n8. Katalogsysteme / E-Procurement einsetzen.\n9. Bereiche mit besonders hohem Maverick Buying analysieren.\n\nBeispiel:\nMitarbeiter können Büromaterial nicht mehr frei bestellen, sondern bestellen aus einem vom Einkauf freigegebenen Katalog.\n\nMerksatz:\n👉 Klare Regeln + einfache Prozesse + Einbindung des Einkaufs = weniger Maverick Buying."},
+    {q:"Was kann man gegen Maverick Buying durch Delegation bzw. E-Procurement tun?", a:"Nicht jede Beschaffung muss zwingend individuell durch einen Einkäufer durchgeführt werden. Für geeignete Beschaffungen kann der Einkauf die Bestellung gezielt delegieren, z. B. über:\n\n• Katalogsysteme\n• E-Procurement\n• freigegebene Lieferanten\n• Rahmenverträge\n\nDadurch können Fachabteilungen selbst bestellen, ohne den Einkauf vollständig zu umgehen.\n\nBeispiel:\nEin Mitarbeiter bestellt Standard-Büromaterial selbst aus einem vom Einkauf freigegebenen Online-Katalog.\n\nMerksatz:\n👉 Delegieren ja – aber kontrolliert durch den Einkauf."},
+    {q:"Was bedeutet TCO und warum spielt TCO bei Maverick Buying eine Rolle?", a:"TCO = Total Cost of Ownership.\n\nDabei werden nicht nur der Einkaufspreis, sondern alle relevanten Kosten über den gesamten Lebenszyklus eines Produkts oder einer Leistung betrachtet.\n\nMitarbeiter können Maverick Buying betreiben, wenn sie nur den kurzfristigen Einkaufspreis betrachten und die Gesamtkosten nicht kennen.\n\nBeispiel:\nEin günstiger Drucker kostet in der Anschaffung weniger, benötigt aber teure Toner und verursacht hohe Wartungskosten. Der Einkauf würde deshalb möglicherweise ein anderes Modell auswählen.\n\nMerksatz:\n👉 Nicht nur den Preis sehen – die Gesamtkosten zählen."},
+    {q:"Was ist bei einer vorgegebenen Maverick-Buying-Zielquote zu beachten?", a:"Eine Zielquote sollte zur Unternehmensgröße und zum Beschaffungsvolumen passen. Eine hohe Quote bedeutet, dass ein erheblicher Teil des Beschaffungsvolumens am Einkauf vorbei erfolgt.\n\nIn der Prüfung wurde beispielsweise eine Quote von 15 % für ein mittelständisches Unternehmen diskutiert. In der Musterlösung wird diese als zu hoch eingeordnet und eine deutliche Reduzierung angestrebt.\n\nBeispiel:\nBei 100 Mio. € Einkaufsvolumen bedeuten 15 % Maverick Buying bereits 15 Mio. €, die nicht über die regulären Einkaufsprozesse laufen.\n\nMerksatz:\n👉 Je größer das Einkaufsvolumen, desto wichtiger ist die Kontrolle des Maverick Buying."},
+    {q:"Wie kann man Widerstände gegen den Abbau von Maverick Buying reduzieren?", a:"Mögliche Vorgehensweisen:\n\n• finanzielle Nachteile des Maverick Buying aufzeigen\n• Controlling in die Argumentation einbeziehen\n• Vorteile der Einkaufsprozesse erklären\n• unnötige bürokratische Hürden abbauen\n• Einkaufsprozesse analysieren und vereinfachen\n• einen Code of Conduct einführen\n• rechtliche Risiken verdeutlichen\n• Geschäftsleitung klar hinter die Einkaufsregeln stellen\n\nBeispiel:\nEine Fachabteilung beschwert sich über den Einkaufsprozess. Der Einkauf untersucht daraufhin, welche Schritte tatsächlich unnötig sind, und vereinfacht den Prozess.\n\nMerksatz:\n👉 Widerstand nicht einfach bekämpfen – Ursachen verstehen und Prozesse verbessern."},
+    {q:"Welche Rolle spielen Einkaufsrichtlinien und ein Einkaufshandbuch beim Abbau von Maverick Buying?", a:"Sie legen verbindlich fest:\n\n• wer bestellen darf\n• welche Prozesse einzuhalten sind\n• wann der Einkauf einzubeziehen ist\n• welche Lieferanten genutzt werden dürfen\n• welche Genehmigungen erforderlich sind\n\nDadurch werden Verantwortlichkeiten und Abläufe für die Mitarbeiter eindeutig.\n\nBeispiel:\nDie Einkaufsrichtlinie schreibt vor, dass Investitionen ab einer bestimmten Höhe zwingend über den Einkauf abgewickelt werden müssen.\n\nMerksatz:\n👉 Klare Zuständigkeit verhindert freie Beschaffung."},
+    {q:"Warum sollte der Einkauf frühzeitig in Entwicklungen und Investitionen eingebunden werden?", a:"Dadurch kann der Einkauf bereits frühzeitig:\n\n• Lieferanten auswählen\n• Preise und Konditionen verhandeln\n• Alternativen prüfen\n• Rahmenverträge nutzen\n• TCO betrachten\n• Beschaffungsrisiken reduzieren\n\nEine späte Einbindung kann dazu führen, dass Fachabteilungen bereits eigenständig Lieferanten ausgewählt oder Aufträge vergeben haben.\n\nBeispiel:\nDie Technik plant eine neue Produktionsanlage. Wird der Einkauf bereits bei der Planung beteiligt, kann er Lieferanten vergleichen und bessere Konditionen verhandeln.\n\nMerksatz:\n👉 Einkauf nicht erst beim Bestellen einschalten – sondern frühzeitig."},
+    {q:"Warum ist die Maverick-Buying-Quote eine wichtige Einkaufskennzahl (KPI)?", a:"Die Maverick-Buying-Quote zeigt, wie viel Beschaffungsvolumen außerhalb der vorgesehenen Einkaufsprozesse abgewickelt wird.\n\nSie kann deshalb genutzt werden, um die Einhaltung der Einkaufsprozesse zu kontrollieren und Verbesserungsmaßnahmen abzuleiten.\n\nBeispiel:\nDie Quote steigt von 8 % auf 18 %. Das Unternehmen untersucht daraufhin, welche Abteilungen und Beschaffungen besonders häufig am Einkauf vorbei erfolgen.\n\nMerksatz:\n👉 Die Quote zeigt, wie viel Einkauf am Einkauf vorbeigeht."},
+    {q:"Wie könnte eine typische IHK-Aufgabe zur Maverick-Buying-Quote aussehen?", a:"Typischerweise kann die IHK verlangen:\n\n1. Maverick Buying erklären\n2. Maverick-Buying-Quote berechnen\n3. Folgen nennen\n4. Gründe erläutern\n5. Maßnahmen zur Reduzierung nennen\n6. interne Kunden identifizieren\n7. eine Zielquote beurteilen\n8. Widerstände gegen Veränderungen beschreiben und Maßnahmen dagegen nennen\n\nBeispiel:\n„Das Unternehmen hat ein Beschaffungsvolumen von 50 Mio. €, davon werden 7,5 Mio. € am Einkauf vorbei beschafft. Ermitteln Sie die Quote und nennen Sie fünf Maßnahmen zur Verringerung.“\n\nLösung:\n7,5 Mio. € ÷ 50 Mio. € × 100 = 15 %\n\nMerksatz:\n👉 Bei Maverick Buying immer an: Definition → Quote → Folgen → Gründe → Maßnahmen denken."}
+  ]
+};
 
+const categoryNames = Object.keys(data);
+let currentCategory = categoryNames[0];
+let cards = data[currentCategory];
 let order = cards.map((_, i) => i);
 let pos = 0;
 let flipped = false;
@@ -320,10 +366,32 @@ const progressText = document.getElementById('progressText');
 const progressPct = document.getElementById('progressPct');
 const prevBtn = document.getElementById('prevBtn');
 const nextBtn = document.getElementById('nextBtn');
-const flipBtn = document.getElementById('flipBtn');
 const shuffleBtn = document.getElementById('shuffleBtn');
 const resetBtn = document.getElementById('resetBtn');
 const doneMsg = document.getElementById('doneMsg');
+const categoryRow = document.getElementById('categoryRow');
+
+function buildCategoryButtons(){
+  categoryRow.innerHTML = '';
+  categoryNames.forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn' + (name === currentCategory ? ' active' : '');
+    btn.textContent = name;
+    btn.addEventListener('click', () => switchCategory(name));
+    categoryRow.appendChild(btn);
+  });
+}
+
+function switchCategory(name){
+  if (name === currentCategory) return;
+  currentCategory = name;
+  cards = data[currentCategory];
+  order = cards.map((_, i) => i);
+  pos = 0;
+  flipped = false;
+  buildCategoryButtons();
+  render();
+}
 
 function render(){
   const idx = order[pos];
@@ -349,7 +417,6 @@ function flip(){
 }
 
 cardEl.addEventListener('click', flip);
-flipBtn.addEventListener('click', (e) => { e.stopPropagation(); flip(); });
 
 prevBtn.addEventListener('click', () => {
   if (pos > 0){ pos--; render(); }
@@ -379,6 +446,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === ' ') { e.preventDefault(); flip(); }
 });
 
+buildCategoryButtons();
 render();
 </script>
 </body>
